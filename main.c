@@ -5,7 +5,6 @@
 #include <stdint.h>
 #include <time.h>
 
-#define NUM_SAMPLES 500000
 #define PI 4*atan(1)
 
 struct riffChunk
@@ -52,6 +51,8 @@ struct slntChunk
 typedef struct slntChunk SlntChunk;
 typedef struct slntChunk* SlntPtr;
 
+int calculateSample(float freq, float time);
+
 int main()
 {
 	
@@ -60,8 +61,10 @@ int main()
 	FILE *fPtr;
 	
 	int sample;
-//	int rand1;
-//	int frequency = 523;
+
+	int audioLength = 5; // seconds
+	int sampleRate = 41000; // Hz
+	int numSamples = audioLength * sampleRate;
 	
 	// Create riff chunk
 	RiffPtr riffChunk = (RiffPtr) malloc( sizeof(RiffChunk) );
@@ -78,7 +81,7 @@ int main()
 	fmtChunk->chunkSize = 16;
 	fmtChunk->compressionCode = 1;
 	fmtChunk->numberOfChannels = 1;
-	fmtChunk->sampleRate = 10000;
+	fmtChunk->sampleRate = sampleRate;
 	fmtChunk->sigBitsPerSample = 8;
 	fmtChunk->blockAlign = fmtChunk->sigBitsPerSample *	fmtChunk->numberOfChannels / 8;
 	fmtChunk->avgBytesPerSecond = fmtChunk->sampleRate * fmtChunk->blockAlign;
@@ -97,7 +100,7 @@ int main()
 	slntChunk->chunkSize = 4;
 	
 	// Calculate the chunk sizes and write them to their respective positions
-	dataChunk->chunkSize = fmtChunk->numberOfChannels * NUM_SAMPLES * fmtChunk->avgBytesPerSecond / 8;
+	dataChunk->chunkSize = fmtChunk->numberOfChannels * numSamples * fmtChunk->avgBytesPerSecond / 8;
 	
 	// Write the data to file (binary)
 	
@@ -126,40 +129,14 @@ int main()
 	
 	float time;	
 	// Generate and write the sound data to file
-	for ( int k = 0; k < NUM_SAMPLES; k++ )
+	for ( int k = 0; k < numSamples; k++ )
 	{
 		
 		time = ((float)k)/fmtChunk->sampleRate;
 		
-		//		sample = 64*sin(2*PI*frequency*time + sin(75*time))+127;
-		
-		sample = ( 64*sin(2*PI*523*time) +
-				  64*pow(sin(2*PI*523*time),5) ) / 2 + 127;
-		
-		if ( ( k >= 10000 && k < 12500) )
-		{
-			sample = ( 64*sin(2*PI*523*time) +
-					  64*pow(sin(2*PI*523*time),5) ) / 2 + 127;
-		}
-		
-		else if ( ( k >= 12500 && k < 20000 ) || ( k >= 30000 && k < 40000 ) )
-		{
-			sample = ( 64*sin(2*PI*0*time) +
-					  64*sin(2*PI*0*time) ) / 2 + 127;
-		}
-		
-		else if ( ( k >= 20000 && k < 30000 )  )
-		{
-			sample = ( 64*sin(2*PI*523*time) +
-					  64*sin(2*PI*523*time) ) / 2 + 127;
-		}
-		
-		else if  ( k >= 50000 )
-		{
-			sample = ( 64*sin(2*PI*523*time) +
-					  64*sin(2*PI*523*time) ) / 2 + 127;
-		}	
-		
+		// Using a constant frequency as an example. You could alter the frequencies over time, change the waveform, additive synthesis, etc. Have fun!   
+		sample = calculateSample(523,time);
+
 		if ( sample >= 1000 || sample <= -1000 )
 			sample /= 1000;
 		
@@ -178,8 +155,24 @@ int main()
 	free(dataChunk);
 	free(slntChunk);
 	
+	printf("done!\n");
+	
 	return 0;
 	
+}
+
+// calculate the sample using some waveform
+int calculateSample(float freq, float time)
+{
+	// sine waves
+	//return (int)64*sin(2*PI*freq*time);
+	//return (int)( 64*sin(2*PI*freq*time) + 64*pow(sin(2*PI*freq*time),5) ) / 2 + 127;
+
+	// sawtooth waves
+	//return (int)64*(freq*time - floor(freq*time)) + 127;
+	
+	// square waves
+	return 64*(sin(2*PI*freq*time) > 0 ? 1 : ((sin(2*PI*freq*time) < 0) ? -1 : 0));  
 }
 
 
