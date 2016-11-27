@@ -60,10 +60,10 @@ int main()
 	
 	FILE *fPtr;
 	
-	int sample;
+	int16_t sample;
 
-	int audioLength = 5; // seconds
-	int sampleRate = 41000; // Hz
+	int audioLength = 3; // seconds
+	int sampleRate = 44100; // Hz
 	int numSamples = audioLength * sampleRate;
 	
 	// Create riff chunk
@@ -82,7 +82,7 @@ int main()
 	fmtChunk->compressionCode = 1;
 	fmtChunk->numberOfChannels = 1;
 	fmtChunk->sampleRate = sampleRate;
-	fmtChunk->sigBitsPerSample = 8;
+	fmtChunk->sigBitsPerSample = 16;         
 	fmtChunk->blockAlign = fmtChunk->sigBitsPerSample *	fmtChunk->numberOfChannels / 8;
 	fmtChunk->avgBytesPerSecond = fmtChunk->sampleRate * fmtChunk->blockAlign;
 	
@@ -134,13 +134,13 @@ int main()
 		
 		time = ((float)k)/fmtChunk->sampleRate;
 		
-		// Using a constant frequency as an example. You could alter the frequencies over time, change the waveform, additive synthesis, etc. Have fun!   
-		sample = calculateSample(523,time);
+		// C major chord.
+	    //sample = (calculateSample(164, (float)k) + calculateSample(131, (float)k) + calculateSample(196, (float)k))/3;
 
-		if ( sample >= 1000 || sample <= -1000 )
-			sample /= 1000;
+		// C note alone
+		sample = calculateSample(131, (float)k);
 		
-		fwrite( &sample, 1, 1, fPtr );
+		fwrite( &sample, 1, sizeof(sample), fPtr );
 		
 		printf("k: %d, time: %f, sample: %d\n", k, time, sample );
 	}
@@ -164,15 +164,16 @@ int main()
 // calculate the sample using some waveform
 int calculateSample(float freq, float time)
 {
+	int volume = 100;
+
 	// sine waves
-	//return (int)64*sin(2*PI*freq*time);
-	//return (int)( 64*sin(2*PI*freq*time) + 64*pow(sin(2*PI*freq*time),5) ) / 2 + 127;
+	//return (int)32767*volume/100*sin(2*PI/44100*freq*time);
 
 	// sawtooth waves
-	//return (int)64*(freq*time - floor(freq*time)) + 127;
+	return (int)32767*volume/100*(remainder(sin(2*PI/44100*freq*time),1));
 	
 	// square waves
-	return 64*(sin(2*PI*freq*time) > 0 ? 1 : ((sin(2*PI*freq*time) < 0) ? -1 : 0));  
+	//return 32767*volume/100*(sin(2*PI/44100*freq*time) > 0 ? 1 : ((sin(2*PI/44100*freq*time) < 0) ? -1 : 0));  
 }
 
 
